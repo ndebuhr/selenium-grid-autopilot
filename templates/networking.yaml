@@ -1,0 +1,43 @@
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: selenium-grid
+spec:
+  domains:
+  - {{ .Values.domains.ide }}
+  - {{ .Values.domains.hub }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: selenium-grid
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/v1beta1.FrontendConfig: selenium-grid
+    networking.gke.io/managed-certificates: selenium-grid
+spec:
+  defaultBackend:
+    service:
+      name: code
+      port:
+        number: 8080
+  rules:
+  - host: {{ .Values.domains.hub }}
+    http:
+      paths:
+      - pathType: ImplementationSpecific
+        backend:
+          service:
+            name: selenium-hub
+            port:
+              number: 4444
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: selenium-grid
+spec:
+  redirectToHttps:
+    enabled: true
+---

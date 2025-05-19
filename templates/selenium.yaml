@@ -1,0 +1,196 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: selenium-hub
+  labels:
+    app: selenium-hub
+    subsystem: selenium
+spec:
+  type: ClusterIP
+  selector:
+    app: selenium-hub
+  ports:
+  - name: selenium
+    port: 4444
+    targetPort: 4444
+  - name: event-bus-publish
+    port: 4442
+    targetPort: 4442
+  - name: event-bus-subscribe
+    port: 4443
+    targetPort: 4443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-hub
+  labels:
+    app: selenium-hub
+    subsystem: selenium
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selenium-hub
+  template:
+    metadata:
+      labels:
+        app: selenium-hub
+    spec:
+      serviceAccountName: {{ .Values.selenium.hub.serviceAccount }}
+      containers:
+      - name: selenium-hub
+        image: {{ .Values.selenium.hub.image }}:{{ .Values.selenium.hub.tag }}
+        imagePullPolicy: {{ .Values.selenium.hub.imagePullPolicy }}
+        resources: {{ toYaml .Values.selenium.hub.resources | nindent 10 }}
+        ports:
+        - name: selenium
+          containerPort: 4444
+        livenessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-chrome
+  labels:
+    app: selenium-chrome
+    subsystem: selenium
+spec:
+  replicas: {{ .Values.selenium.chrome.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: selenium-chrome
+  template:
+    metadata:
+      labels:
+        app: selenium-chrome
+    spec:
+      serviceAccountName: {{ .Values.selenium.chrome.serviceAccount }}
+      containers:
+      - name: selenium-chrome
+        image: {{ .Values.selenium.chrome.image }}:{{ .Values.selenium.chrome.tag }}
+        imagePullPolicy: {{ .Values.selenium.chrome.imagePullPolicy }}
+        env:
+        - name: SE_EVENT_BUS_HOST
+          value: "selenium-hub"
+        - name: SE_EVENT_BUS_PUBLISH_PORT
+          value: "4442"
+        - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+          value: "4443"
+        - name: SE_VNC_NO_PASSWORD
+          value: "1"
+        resources: {{ toYaml .Values.selenium.chrome.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-firefox
+  labels:
+    app: selenium-firefox
+    subsystem: selenium
+spec:
+  replicas: {{ .Values.selenium.firefox.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: selenium-firefox
+  template:
+    metadata:
+      labels:
+        app: selenium-firefox
+    spec:
+      serviceAccountName: {{ .Values.selenium.firefox.serviceAccount }}
+      containers:
+      - name: selenium-firefox
+        image: {{ .Values.selenium.firefox.image }}:{{ .Values.selenium.firefox.tag }}
+        imagePullPolicy: {{ .Values.selenium.firefox.imagePullPolicy }}
+        env:
+        - name: SE_EVENT_BUS_HOST
+          value: "selenium-hub"
+        - name: SE_EVENT_BUS_PUBLISH_PORT
+          value: "4442"
+        - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+          value: "4443"
+        - name: SE_VNC_NO_PASSWORD
+          value: "1"
+        resources: {{ toYaml .Values.selenium.firefox.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-edge
+  labels:
+    app: selenium-edge
+    subsystem: selenium
+spec:
+  replicas: {{ .Values.selenium.edge.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: selenium-edge
+  template:
+    metadata:
+      labels:
+        app: selenium-edge
+    spec:
+      serviceAccountName: {{ .Values.selenium.edge.serviceAccount }}
+      containers:
+      - name: selenium-edge
+        image: {{ .Values.selenium.edge.image }}:{{ .Values.selenium.edge.tag }}
+        imagePullPolicy: {{ .Values.selenium.edge.imagePullPolicy }}
+        env:
+        - name: SE_EVENT_BUS_HOST
+          value: "selenium-hub"
+        - name: SE_EVENT_BUS_PUBLISH_PORT
+          value: "4442"
+        - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+          value: "4443"
+        - name: SE_VNC_NO_PASSWORD
+          value: "1"
+        resources: {{ toYaml .Values.selenium.edge.resources | nindent 10 }}
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: selenium-hub
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: selenium-node

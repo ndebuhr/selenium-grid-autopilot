@@ -1,0 +1,15 @@
+apiVersion: v2
+name: selenium-grid-autopilot
+description: A Helm chart for deploying Selenium Grid (and a client workstation) on GKE Autopilot
+version: 0.1.0
+appVersion: 4.89.1-4.25.0
+keywords:
+- selenium
+- testing
+- automation
+home: https://github.com/ndebuhr/selenium-grid-autopilot
+sources:
+- https://github.com/ndebuhr/selenium-grid-autopilot
+maintainers:
+- name: Neal DeBuhr
+  email: ndebuhr@gmail.com

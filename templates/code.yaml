@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: code
+  labels:
+    app: code
+  annotations:
+    cloud.google.com/backend-config: '{"ports": {"8080":"code"}}'
+spec:
+  type: NodePort
+  ports:
+  - name: code
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: code
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name:  code
+spec:
+{{- if .Values.iap.enabled }}
+  iap:
+    enabled: true
+    oauthclientCredentials:
+      secretName: {{ .Values.iap.oauthclientCredentials.secretName }}
+{{- end }}
+  timeoutSec: 300
+  healthCheck:
+    requestPath: /login
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code
+  labels:
+    app: code
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: code
+  template:
+    metadata:
+      labels:
+        app: code
+    spec:
+      serviceAccountName: {{ .Values.code.serviceAccount }}
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: code
+        image: {{ .Values.code.image }}:{{ .Values.code.tag }}
+        imagePullPolicy: {{ .Values.code.imagePullPolicy }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PASSWORD
+          value: "{{ .Values.password }}"
+        resources: {{ toYaml .Values.code.resources | nindent 10 }}
+        volumeMounts:
+        - name: coder
+          mountPath: /home/coder
+          subPath: home/coder
+      volumes:
+      - name: coder
+        persistentVolumeClaim:
+          claimName: coder-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: coder-pvc
+  labels:
+    app: code
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.code.storage }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.code.serviceAccount }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: code-admin
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.code.serviceAccount }}
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,78 @@
+domains:
+  ide: ide.example.com
+  hub: hub.example.com
+password: Pas5.w0rd
+
+iap:
+  enabled: true
+  oauthclientCredentials:
+    secretName: iap-oauth
+
+code:
+  serviceAccount: code
+  image: codercom/code-server
+  tag: 4.89.1
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 2
+      memory: 8Gi
+      ephemeral-storage: 8Gi
+    limits:
+      cpu: 2
+      memory: 8Gi
+      ephemeral-storage: 8Gi
+  storage: 64Gi
+
+selenium:
+  hub:
+    serviceAccount: selenium-hub
+    image: selenium/hub
+    tag: 4.25.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 0.5
+        memory: 2Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+  chrome:
+    replicas: 1
+    serviceAccount: selenium-node
+    image: selenium/node-chrome
+    tag: 4.25.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 0.5
+        memory: 2Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+  firefox:
+    replicas: 1
+    serviceAccount: selenium-node
+    image: selenium/node-firefox
+    tag: 4.25.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 0.5
+        memory: 2Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+  edge:
+    replicas: 1
+    serviceAccount: selenium-node
+    image: selenium/node-edge
+    tag: 4.25.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 0.5
+        memory: 2Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
