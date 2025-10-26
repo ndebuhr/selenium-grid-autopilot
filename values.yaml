@@ -10,7 +10,7 @@ iap:
 
 code:
   serviceAccount: code
-  image: codercom/code-server
+  image: ndebuhr/selenium-grid-code
   tag: 4.89.1
   imagePullPolicy: IfNotPresent
   resources:
